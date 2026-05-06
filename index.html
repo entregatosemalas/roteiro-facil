@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roteiro Fácil – @entregatosemalas</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FDF9F3;color:#000;min-height:100vh;}
+input,select,button,textarea{font-family:inherit;font-size:14px;}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=time],input[type=date],textarea{
+  border:1px solid #ddd;border-radius:8px;padding:9px 12px;outline:none;background:#fff;color:#000;transition:border-color .15s;width:100%;}
+input:focus,textarea:focus{border-color:#E8B4B8;box-shadow:0 0 0 3px rgba(232,180,184,.15);}
+textarea{resize:vertical;min-height:52px;line-height:1.5;}
+button{border:1px solid #ddd;border-radius:8px;padding:9px 16px;cursor:pointer;background:#fff;color:#000;transition:all .15s;font-weight:500;}
+button:hover{background:#f9f0f1;border-color:#E8B4B8;}
+button.primary{background:#E74C3C;color:#fff;border-color:#E74C3C;}
+button.primary:hover{background:#c0392b;border-color:#c0392b;}
+button.soft{background:#E8B4B8;color:#000;border-color:#E8B4B8;}
+button.soft:hover{background:#d9a0a5;}
+button.ghost{background:transparent;color:#545454;border-color:#ddd;}
+button.ghost:hover{background:#f9f0f1;}
+select{border:1px solid #ddd;border-radius:8px;padding:7px 10px;background:#fff;cursor:pointer;outline:none;color:#000;}
+select:focus{border-color:#E8B4B8;}
+.screen{display:none;}.screen.on{display:block;}
+.card{background:#fff;border:1px solid #eee;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.04);}
+.lbl{font-size:11px;font-weight:600;color:#545454;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.errmsg{font-size:13px;color:#E74C3C;margin-top:6px;display:none;}
+.drop-zone{border:2px dashed #E8B4B8;border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:#fffcfc;}
+.drop-zone:hover,.drop-zone.over{border-color:#E74C3C;background:#fff5f5;}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.spin{width:36px;height:36px;border:3px solid #E8B4B8;border-top-color:#E74C3C;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.tabs{display:flex;border-bottom:1px solid #eee;}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;color:#545454;border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;}
+.tab-btn:hover{color:#000;background:#fdf9f3;}.tab-btn.on{color:#000;border-bottom-color:#E74C3C;}
+.day-block{margin-bottom:14px;border:1px solid #eee;border-radius:14px;overflow:hidden;background:#fff;}
+.day-header{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #eee;background:#fff8f8;flex-wrap:wrap;}
+.day-stops{padding:10px 14px 6px;}
+.stop-card{background:#fff;border:1px solid #eee;border-radius:10px;margin-bottom:8px;transition:box-shadow .15s,opacity .15s,border-color .15s;position:relative;}
+.stop-card.dragging{opacity:.4;box-shadow:0 6px 20px rgba(231,76,60,.2);}
+.stop-card.drag-over{border-color:#E74C3C;box-shadow:0 0 0 2px rgba(231,76,60,.15);}
+.drag-handle{display:flex;align-items:center;justify-content:center;width:30px;cursor:grab;color:#ccc;font-size:15px;flex-shrink:0;padding:14px 0 14px 10px;user-select:none;}
+.drag-handle:active{cursor:grabbing;}
+.stop-inner{display:flex;align-items:flex-start;}
+.stop-content{flex:1;padding:11px 14px 11px 6px;}
+.stop-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.stop-name{font-size:14px;font-weight:600;color:#000;text-decoration:none;border-bottom:1px solid #E8B4B8;}
+.stop-name:hover{color:#E74C3C;}
+.cat-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:99px;margin-left:5px;font-weight:600;white-space:nowrap;}
+.stop-desc{font-size:12px;color:#545454;line-height:1.5;margin-bottom:6px;min-height:14px;}
+.stop-note-area{background:#fdf9f3;border:1px solid #eee;border-radius:7px;padding:7px 10px;margin-bottom:8px;}
+.stop-note-area .note-lbl{font-size:10px;font-weight:600;color:#E74C3C;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.stop-note-area textarea{border:none;background:transparent;padding:0;font-size:12px;min-height:36px;color:#545454;}
+.stop-note-area textarea:focus{outline:none;box-shadow:none;}
+.stop-ctrls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.dur-wrap{display:flex;align-items:center;gap:5px;font-size:12px;color:#545454;}
+.dur-wrap input{width:52px;text-align:center;font-size:12px;padding:3px 6px;}
+.time-badge{text-align:right;flex-shrink:0;padding-top:2px;}
+.time-lbl{font-size:10px;color:#545454;line-height:1.5;white-space:nowrap;}
+.travel-row{font-size:11px;color:#bbb;padding:2px 0 6px 44px;display:flex;align-items:center;gap:6px;}
+.shimmer{display:inline-block;width:55%;height:10px;background:#f0e8e9;border-radius:4px;animation:sh 1.3s ease infinite;vertical-align:middle;}
+@keyframes sh{0%,100%{opacity:.3;}50%{opacity:.8;}}
+.info-box{background:#fff8f8;border:1px solid #f5d5d7;border-radius:8px;padding:10px 14px;font-size:12px;color:#545454;}
+.hotel-banner{background:#fff8f8;border:1px solid #f5d5d7;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.hotel-banner.has-hotel{background:#f0fff4;border-color:#b2dfdb;}
+.instructions-panel{background:#fff;border:1px solid #eee;border-radius:14px;margin-bottom:18px;overflow:hidden;}
+.instructions-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;cursor:pointer;user-select:none;}
+.instructions-toggle:hover{background:#fdf9f3;}
+.instructions-body{padding:0 18px 16px;display:none;}
+.instructions-body.open{display:block;}
+.tip-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.tip-num{width:24px;height:24px;border-radius:50%;background:#E74C3C;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.tip-text{font-size:13px;color:#000;line-height:1.6;}
+.tip-text b{color:#E74C3C;}
+.tip-text .subtle{color:#545454;font-size:12px;display:block;margin-top:2px;}
+.tip-divider{height:1px;background:#f5f5f5;margin:14px 0;}
+.best-practice{background:#fdf9f3;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#545454;display:flex;gap:8px;align-items:flex-start;}
+.best-practice .icon{font-size:14px;flex-shrink:0;}
+.recalc-toast{background:#000;color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;}
+.color-bar{display:flex;align-items:center;gap:8px;padding:7px 14px;background:#fff;border-bottom:1px solid #eee;flex-wrap:wrap;}
+.color-bar label{font-size:11px;font-weight:600;color:#545454;text-transform:uppercase;letter-spacing:.04em;}
+.clr-day-wrap{display:flex;align-items:center;gap:4px;background:#f9f0f1;border-radius:8px;padding:4px 8px;}
+.clr-day-wrap span{font-size:11px;font-weight:600;color:#545454;}
+.clr-item{display:flex;align-items:center;gap:3px;font-size:10px;color:#888;}
+.clr-item input[type=color]{width:22px;height:22px;border:1px solid #ddd;border-radius:4px;padding:1px;cursor:pointer;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.on{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:24px;width:440px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px;}
+.modal .row{margin-bottom:13px;}
+.search-results{max-height:170px;overflow-y:auto;border:1px solid #eee;border-radius:8px;margin-top:6px;}
+.sr-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5;font-size:13px;}
+.sr-item:hover{background:#fdf9f3;}.sr-item:last-child{border-bottom:none;}
+.sr-name{font-weight:600;color:#000;}.sr-addr{font-size:11px;color:#545454;margin-top:2px;}
+.cat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.cat-pill{padding:5px 12px;border-radius:99px;border:1px solid #ddd;font-size:12px;cursor:pointer;transition:all .15s;background:#fff;}
+.cat-pill:hover{border-color:#E8B4B8;background:#fff8f8;}
+.cat-pill.selected{border-color:#E74C3C;background:#E74C3C;color:#fff;}
+#map{width:100%;height:100%;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen on" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  <div class="card" style="width:360px;display:flex;flex-direction:column;gap:18px;">
+    <div style="text-align:center;">
+      <div style="font-size:22px;font-weight:700;color:#000;letter-spacing:-.3px;">Roteiro Fácil</div>
+      <div style="font-size:13px;color:#E74C3C;font-weight:500;margin-top:2px;">@entregatosemalas</div>
+      <div style="height:1px;background:linear-gradient(90deg,transparent,#E8B4B8,transparent);margin:14px 0;"></div>
+      <div style="font-size:13px;color:#545454;">Seu roteiro de viagem otimizado</div>
+    </div>
+    <div><div class="lbl">E-mail</div><input type="email" id="em" placeholder="seu@email.com"></div>
+    <div><div class="lbl">Senha</div><input type="password" id="pw" placeholder="••••••••"></div>
+    <div id="le" class="errmsg"></div>
+    <button id="btn-login" class="primary" style="width:100%;padding:12px;">Entrar</button>
+    <div style="font-size:12px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:12px;">Acesse com o e-mail usado na compra do mapa</div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div id="s-up" class="screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+  <div class="card" style="width:480px;display:flex;flex-direction:column;gap:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div style="font-size:18px;font-weight:700;">Novo roteiro</div><div style="font-size:12px;color:#E74C3C;font-weight:500;">@entregatosemalas</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span id="uname" style="font-size:13px;color:#545454;"></span><button id="btn-logout" class="ghost" style="font-size:12px;padding:6px 12px;">Sair</button></div>
+    </div>
+    <div style="background:#fdf9f3;border:1px solid #eee;border-radius:10px;padding:13px 15px;">
+      <div style="font-size:12px;font-weight:700;color:#E74C3C;margin-bottom:8px;">💡 Como preparar seu mapa para melhores resultados</div>
+      <div style="font-size:12px;color:#545454;line-height:1.7;">
+        • <b>Nomeie bem cada local</b> no Google Maps — o nome vira título da parada<br>
+        • <b>Inclua restaurantes e cafés</b> que você quer visitar — o sistema vai posicioná-los nos horários certos<br>
+        • <b>Adicione a hospedagem</b> depois de gerar o roteiro — o mapa se reorganiza ao redor do hotel<br>
+        • Quanto mais locais você adicionar, mais inteligente fica a divisão por dias
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Arquivo KML (Google Maps)</div>
+      <div class="drop-zone" id="dz"><input type="file" accept=".kml" id="fi">
+        <div style="font-size:20px;margin-bottom:6px;">🗺️</div>
+        <div style="font-weight:600;margin-bottom:3px;">Arraste o .kml aqui</div>
+        <div style="font-size:13px;color:#545454;">ou clique para selecionar</div>
+      </div>
+      <div id="fname" style="display:none;margin-top:8px;font-size:13px;color:#545454;background:#fdf9f3;padding:8px 12px;border-radius:8px;border:1px solid #eee;"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:12px;color:#999;">ou</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+    <button id="btn-open-add" class="soft" style="width:100%;">+ Adicionar local manualmente</button>
+    <div>
+      <div class="lbl">Quantos dias de viagem?</div>
+      <div style="display:flex;align-items:center;gap:10px;"><input type="number" id="ndays" min="1" max="30" value="3" style="width:70px;text-align:center;"><span style="font-size:13px;color:#545454;">dias</span></div>
+    </div>
+    <div id="manual-list" style="display:none;"><div class="lbl">Locais adicionados</div><div id="manual-items" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div></div>
+    <div id="ue" class="errmsg"></div>
+    <button id="btn-gen" class="primary" style="width:100%;padding:12px;">Gerar roteiro →</button>
+    <div class="info-box"><b>Exportar KML:</b> Google Maps → Menu ☰ → Seus lugares → Mapas → abra seu mapa → ⋮ → Exportar para KML</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="s-load" class="screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:100vh;background:#FDF9F3;">
+  <div class="spin"></div>
+  <div style="font-size:17px;font-weight:600;">Calculando rotas...</div>
+  <div id="lsub" style="font-size:13px;color:#545454;max-width:300px;text-align:center;"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="s-res" class="screen">
+  <div style="background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;padding:0 16px 0 0;">
+    <div style="display:flex;align-items:center;">
+      <div style="padding:8px 18px;border-right:1px solid #eee;"><div style="font-size:14px;font-weight:700;line-height:1.2;">Roteiro Fácil</div><div style="font-size:10px;color:#E74C3C;font-weight:500;">@entregatosemalas</div></div>
+      <div class="tabs" style="border:none;">
+        <button class="tab-btn on" id="tb-tl">Roteiro por dia</button>
+        <button class="tab-btn" id="tb-map">Mapa</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="uname2" style="font-size:12px;color:#545454;"></span>
+      <button id="btn-add-res" class="soft" style="font-size:12px;padding:6px 12px;">+ Local</button>
+      <button id="btn-reset" class="ghost" style="font-size:12px;padding:6px 12px;">+ Novo</button>
+      <button id="btn-pdf" class="primary" style="font-size:12px;padding:6px 14px;">⬇ PDF</button>
+    </div>
+  </div>
+
+  <!-- COLOR BAR -->
+  <div class="color-bar" id="color-bar">
+    <span style="font-size:11px;font-weight:600;color:#545454;">CORES POR DIA:</span>
+    <div id="day-color-pickers" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
+  </div>
+
+  <div id="v-tl" style="height:calc(100vh - 87px);overflow-y:auto;padding:18px 20px;max-width:820px;margin:0 auto;">
+    <div id="recalc-toast" class="recalc-toast" style="display:none;">
+      <span>🏨 Hospedagem adicionada! Deseja recalcular o roteiro priorizando proximidade ao hotel?</span>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button id="btn-recalc-yes" class="primary" style="font-size:12px;padding:5px 12px;white-space:nowrap;">Recalcular</button>
+        <button id="btn-recalc-no" style="font-size:12px;padding:5px 12px;white-space:nowrap;border-color:#555;color:#fff;background:transparent;">Manter</button>
+      </div>
+    </div>
+    <div id="cat-toast" style="display:none;background:#FDF9F3;border:1px solid #E8B4B8;border-radius:10px;padding:11px 16px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:#000;">
+      <span>✏️ Categoria alterada! Quer reorganizar o dia para posicionar o local no horário certo?</span>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button id="btn-cat-recalc-yes" class="primary" style="font-size:12px;padding:5px 12px;white-space:nowrap;">Reorganizar</button>
+        <button id="btn-cat-recalc-no" class="ghost" style="font-size:12px;padding:5px 12px;white-space:nowrap;">Manter ordem</button>
+      </div>
+    </div>
+    <div id="hotel-banner" class="hotel-banner">
+      <div style="font-size:20px;">🏨</div>
+      <div style="flex:1;">
+        <div id="hotel-info" style="font-size:13px;color:#545454;">Nenhuma hospedagem cadastrada ainda.</div>
+        <div style="font-size:11px;color:#999;margin-top:2px;">Adicione sua hospedagem para que o roteiro seja organizado ao redor do hotel.</div>
+      </div>
+      <button id="btn-add-hotel" class="soft" style="font-size:12px;padding:6px 12px;white-space:nowrap;">+ Hospedagem</button>
+    </div>
+    <div class="instructions-panel">
+      <div class="instructions-toggle" id="instr-toggle">
+        <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">📖</span><span style="font-weight:600;font-size:14px;">Como usar este roteiro</span><span style="font-size:12px;color:#545454;">— clique para ver as dicas</span></div>
+        <span id="instr-arrow" style="font-size:12px;color:#999;">▾</span>
+      </div>
+      <div class="instructions-body" id="instr-body">
+        <div class="tip-divider" style="margin-top:0;"></div>
+        <div class="tip-step"><div class="tip-num">1</div><div class="tip-text"><b>Arraste os locais</b> para reordenar — segure o ícone ⠿ à esquerda de cada parada e mova para a posição desejada.<span class="subtle">A distância e os horários recalculam automaticamente.</span></div></div>
+        <div class="tip-step"><div class="tip-num">2</div><div class="tip-text"><b>Adicione sua hospedagem</b> clicando em "+ Hospedagem" — o sistema reorganiza os dias para começar e terminar perto do hotel.<span class="subtle">Se ainda não confirmou o hotel, adicione depois — o sistema pergunta se quer recalcular.</span></div></div>
+        <div class="tip-step"><div class="tip-num">3</div><div class="tip-text"><b>Selecione a data</b> de cada dia clicando no campo de calendário. Aparece no PDF e ajuda a visualizar a viagem.</div></div>
+        <div class="tip-step"><div class="tip-num">4</div><div class="tip-text"><b>Ajuste a duração</b> de cada parada em minutos — os horários de chegada e saída recalculam automaticamente.<span class="subtle">Atrações: 60–120 min · Restaurantes: 45–90 min · Cafés: 20–30 min · Compras: 60–180 min</span></div></div>
+        <div class="tip-step"><div class="tip-num">5</div><div class="tip-text"><b>Altere a categoria</b> de cada parada usando o seletor — isso posiciona cafés de manhã, almoços ao meio-dia, compras à tarde e jantares no final do dia.</div></div>
+        <div class="tip-step"><div class="tip-num">6</div><div class="tip-text"><b>Clique no nome</b> de qualquer local para abrir no Google Maps — o PDF também gera esses links clicáveis.</div></div>
+        <div class="tip-divider"></div>
+        <div style="font-size:12px;font-weight:700;color:#E74C3C;margin-bottom:10px;">💡 Dicas para um roteiro ainda melhor</div>
+        <div class="best-practice"><span class="icon">🍴</span><span>Adicione locais de <b>café da manhã</b> com a categoria "Café / Café da manhã" — posicionados automaticamente <b>no início do dia</b>, entre 8h e 10h.</span></div>
+        <div class="best-practice"><span class="icon">🍴</span><span>Marque restaurantes como <b>"Almoço"</b> — posicionados entre <b>12h e 14h</b>, próximos das atrações do dia.</span></div>
+        <div class="best-practice"><span class="icon">🛍️</span><span>Locais de <b>compras</b> são colocados no <b>fim da tarde</b> (16h–19h) — assim você não carrega sacolas o dia todo.</span></div>
+        <div class="best-practice"><span class="icon">🍴</span><span>Marque como <b>"Jantar"</b> os restaurantes para o final do dia — aparecem próximos ao hotel para facilitar o retorno.</span></div>
+        <div class="best-practice"><span class="icon">⭐️</span><span>Atrações com <b>fila ou lotação</b>? Anote no campo de observações e arraste para o início do dia.</span></div>
+        <div class="best-practice"><span class="icon">📍</span><span>Quanto mais locais com a <b>categoria correta</b>, melhor fica a organização automática por horário.</span></div>
+      </div>
+    </div>
+    <div id="tlc"></div>
+  </div>
+
+  <div id="v-map" style="display:none;height:calc(100vh - 87px);">
+    <div id="map" style="width:100%;height:100%;"></div>
+  </div>
+</div>
+
+<!-- MODAL ADD LOCAL -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <h3 id="modal-title">📍 Adicionar local</h3>
+    <div class="row"><div class="lbl">Buscar pelo nome</div><input type="text" id="search-input" placeholder="Ex: Templo Senso-ji, Tóquio..."><div class="search-results" id="search-results" style="display:none;"></div></div>
+    <div id="manual-form" style="display:none;">
+      <div class="row"><div class="lbl">Categoria</div>
+        <div class="cat-pills" id="cat-pills">
+          <div class="cat-pill selected" data-cat="atracao">⭐️ Experiência</div>
+          <div class="cat-pill" data-cat="cafe">🍴 Café da manhã</div>
+          <div class="cat-pill" data-cat="almoco">🍴 Almoço</div>
+          <div class="cat-pill" data-cat="jantar">🍴 Jantar</div>
+          <div class="cat-pill" data-cat="compras">🛍️ Compras</div>
+          <div class="cat-pill" data-cat="templo">⛩️ Templo</div>
+          <div class="cat-pill" data-cat="natureza">🌿 Natureza</div>
+          <div class="cat-pill" data-cat="hotel">🏨 Hospedagem</div>
+          <div class="cat-pill" data-cat="outro">📍 Outros</div>
+        </div>
+      </div>
+      <div class="row"><div class="lbl">Nome</div><input type="text" id="add-name" placeholder="Nome do lugar"></div>
+      <div class="row">
+        <div class="lbl">Endereço completo</div>
+        <input type="text" id="add-address" placeholder="Ex: Rua das Flores, 123, Tóquio, Japão">
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+          <button type="button" id="btn-geocode" class="soft" style="font-size:12px;padding:5px 12px;white-space:nowrap;">🔍 Buscar endereço</button>
+          <span id="geocode-status" style="font-size:12px;color:#545454;"></span>
+        </div>
+      </div>
+      <div class="row"><div class="lbl">Descrição breve</div><textarea id="add-desc" placeholder="O que é este lugar?"></textarea></div>
+      <div class="row"><div class="lbl">Observações pessoais</div><textarea id="add-note" placeholder="Horário de funcionamento, o que pedir, ingressos..."></textarea></div>
+      <input type="hidden" id="add-lat"><input type="hidden" id="add-lng">
+      <div id="add-err" class="errmsg"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+      <button id="btn-add-cancel" class="ghost">Cancelar</button>
+      <button id="btn-add-confirm" class="primary" style="display:none;">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// =====================================================
+const SUPABASE_URL = 'https://esqmcffhwoivxaxzmzlo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzcW1jZmZod29pdnhheHptemxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODg5NDEsImV4cCI6MjA5MzU2NDk0MX0.b3KT-ZpSGpHdPe1lyFqAj6XNaPQ9CjNuzvD5dCB8jcg';
+// =====================================================
+
+var user=null,kmlFile=null,mapObj=null,itin=[],manualPts=[],addTarget='pre',hotel=null,selectedCat='atracao';
+
+var CAT_CONFIG={
+  hotel:    {emoji:'🏨',label:'Hospedagem',    color:'#E74C3C',bg:'#fff0f0',idealH:null},
+  cafe:     {emoji:'🍴',label:'Café da manhã', color:'#c0392b',bg:'#fff5f5',idealH:8},
+  almoco:   {emoji:'🍴',label:'Almoço',        color:'#e67e22',bg:'#fff9f0',idealH:12},
+  jantar:   {emoji:'🍴',label:'Jantar',        color:'#8e44ad',bg:'#fdf5ff',idealH:19},
+  compras:  {emoji:'🛍️',label:'Compras',       color:'#2980b9',bg:'#f0f8ff',idealH:16},
+  atracao:  {emoji:'⭐️',label:'Experiência',   color:'#E74C3C',bg:'#fff8f8',idealH:null},
+  templo:   {emoji:'⛩️',label:'Templo',        color:'#6d4c41',bg:'#fdf8f5',idealH:null},
+  natureza: {emoji:'🌿',label:'Natureza',      color:'#16a085',bg:'#f0fff8',idealH:null},
+  outro:    {emoji:'📍',label:'Outros',        color:'#545454',bg:'#f9f9f9',idealH:null}
+};
+
+var DEFAULT_ROUTE_COLORS=['#E74C3C','#e67e22','#8e44ad','#16a085','#2980b9','#c0392b','#27ae60'];
+var DEFAULT_PIN_COLORS  =['#E74C3C','#e67e22','#8e44ad','#16a085','#2980b9','#c0392b','#27ae60'];
+
+/* ---- UTILS ---- */
+function show(id){
+  ['s-login','s-up','s-load','s-res'].forEach(function(s){var el=document.getElementById(s);if(el){el.classList.remove('on');el.style.display='none';}});
+  var t=document.getElementById(id);if(!t)return;
+  t.classList.add('on');t.style.display=(id==='s-res')?'block':'flex';
+}
+function fmt(m){var h=Math.floor(m/60)%24,mn=m%60;return(h<10?'0':'')+h+':'+(mn<10?'0':'')+mn;}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function mapsLink(lat,lng){return 'https://www.google.com/maps/search/?api=1&query='+lat+','+lng;}
+function fmtDate(iso){
+  if(!iso)return null;
+  var p=iso.split('-');
+  var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  return d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+}
+
+/* ---- AUTH ---- */
+async function doLogin(){
+  var em=document.getElementById('em').value.trim(),pw=document.getElementById('pw').value,err=document.getElementById('le');
+  if(!em||!em.includes('@')){err.textContent='Digite um e-mail válido.';err.style.display='block';return;}
+  if(pw.length<4){err.textContent='Senha deve ter pelo menos 4 caracteres.';err.style.display='block';return;}
+  err.style.display='none';
+  if(SUPABASE_URL==='SUPABASE_URL_AQUI'){
+    user={email:em,name:em.split('@')[0]};
+    document.getElementById('uname').textContent=user.name;
+    document.getElementById('uname2').textContent=user.name;
+    show('s-up');return;
+  }
+  var btn=document.getElementById('btn-login');btn.textContent='Verificando...';btn.disabled=true;
+  try{
+    var res=await fetch(SUPABASE_URL+'/rest/v1/usuarios_liberados?email=eq.'+encodeURIComponent(em.toLowerCase().trim())+'&liberado=eq.true&select=email,nome',{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+    });
+    var data=await res.json();
+    if(!data||!data.length){err.textContent='Acesso não encontrado. Verifique se você comprou o mapa ou fale com o suporte.';err.style.display='block';btn.textContent='Entrar';btn.disabled=false;return;}
+    user={email:em,name:data[0].nome||em.split('@')[0]};
+    document.getElementById('uname').textContent=user.name;
+    document.getElementById('uname2').textContent=user.name;
+    show('s-up');
+  }catch(e){err.textContent='Erro ao verificar acesso. Tente novamente.';err.style.display='block';}
+  btn.textContent='Entrar';btn.disabled=false;
+}
+function doLogout(){user=null;kmlFile=null;manualPts=[];hotel=null;document.getElementById('fname').style.display='none';renderManualList();show('s-login');}
+
+/* ---- FILE ---- */
+function onFile(e){var f=e.target.files[0];if(!f)return;kmlFile=f;document.getElementById('fname').textContent='📄 '+f.name;document.getElementById('fname').style.display='block';}
+
+/* ---- KML ---- */
+function parseKML(txt){
+  var doc=new DOMParser().parseFromString(txt,'text/xml'),pts=[];
+  doc.querySelectorAll('Placemark').forEach(function(pm){
+    var name=(pm.querySelector('name')?.textContent||'Sem nome').trim();
+    var descEl=pm.querySelector('description');
+    var desc=descEl?descEl.textContent.trim().replace(/<[^>]+>/g,''):'';
+    var cEl=pm.querySelector('Point coordinates')||pm.querySelector('coordinates');
+    if(!cEl)return;
+    var raw=cEl.textContent.trim().split(/[\s\n]+/)[0],parts=raw.split(',').map(Number);
+    if(parts.length<2||isNaN(parts[0])||isNaN(parts[1]))return;
+    pts.push({name:name,lat:parts[1],lng:parts[0],desc:desc,note:'',cat:'atracao'});
+  });
+  return pts;
+}
+
+/* ---- MODAL ---- */
+function openAddModal(target,isHotel){
+  addTarget=target||'pre';
+  selectedCat=isHotel?'hotel':'atracao';
+  document.querySelectorAll('.cat-pill').forEach(function(p){p.classList.toggle('selected',p.getAttribute('data-cat')===selectedCat);});
+  ['search-input','add-name','add-desc','add-note','add-address'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('add-lat').value='';document.getElementById('add-lng').value='';
+  document.getElementById('search-results').style.display='none';document.getElementById('search-results').innerHTML='';
+  document.getElementById('manual-form').style.display='none';
+  document.getElementById('btn-add-confirm').style.display='none';
+  document.getElementById('add-err').style.display='none';
+  document.getElementById('geocode-status').textContent='';
+  document.getElementById('modal-title').textContent=isHotel?'🏨 Adicionar hospedagem':'📍 Adicionar local';
+  document.getElementById('modal-add').classList.add('on');
+}
+function closeAddModal(){document.getElementById('modal-add').classList.remove('on');}
+
+document.querySelectorAll('.cat-pill').forEach(function(pill){
+  pill.addEventListener('click',function(){
+    document.querySelectorAll('.cat-pill').forEach(function(p){p.classList.remove('selected');});
+    this.classList.add('selected');selectedCat=this.getAttribute('data-cat');
+  });
+});
+
+var searchTimeout=null;
+document.getElementById('search-input').addEventListener('input',function(){
+  clearTimeout(searchTimeout);var q=this.value.trim();
+  if(q.length<3){document.getElementById('search-results').style.display='none';return;}
+  searchTimeout=setTimeout(function(){doSearch(q);},500);
+});
+
+async function doSearch(q){
+  try{
+    var res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=5',{headers:{'Accept-Language':'pt-BR,pt;q=0.9'}});
+    var data=await res.json();
+    var container=document.getElementById('search-results');
+    if(!data.length){container.innerHTML='<div class="sr-item" style="color:#999;">Nenhum resultado. Preencha o endereço abaixo.</div>';container.style.display='block';showManualForm('','','','');return;}
+    container.innerHTML='';
+    data.forEach(function(r){
+      var div=document.createElement('div');div.className='sr-item';
+      div.innerHTML='<div class="sr-name">'+r.display_name.split(',')[0]+'</div><div class="sr-addr">'+r.display_name+'</div>';
+      div.addEventListener('click',function(){
+        var name=r.display_name.split(',')[0].trim();
+        showManualForm(name,parseFloat(r.lat).toFixed(6),parseFloat(r.lon).toFixed(6),r.display_name);
+        container.style.display='none';document.getElementById('search-input').value=name;
+      });
+      container.appendChild(div);
+    });
+    container.style.display='block';
+  }catch(e){showManualForm('','','','');}
+}
+
+async function geocodeAddress(){
+  var addr=document.getElementById('add-address').value.trim();
+  var status=document.getElementById('geocode-status');
+  if(!addr){status.textContent='Digite um endereço primeiro.';status.style.color='#E74C3C';return;}
+  status.textContent='Buscando...';status.style.color='#545454';
+  try{
+    var res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(addr)+'&format=json&limit=1',{headers:{'Accept-Language':'pt-BR,pt;q=0.9'}});
+    var data=await res.json();
+    if(!data.length){status.textContent='❌ Não encontrado. Tente ser mais específico.';status.style.color='#E74C3C';return;}
+    var r=data[0];
+    document.getElementById('add-lat').value=parseFloat(r.lat).toFixed(6);
+    document.getElementById('add-lng').value=parseFloat(r.lon).toFixed(6);
+    if(!document.getElementById('add-name').value)document.getElementById('add-name').value=r.display_name.split(',')[0].trim();
+    status.textContent='✅ '+r.display_name.split(',').slice(0,2).join(',');status.style.color='#16a085';
+    document.getElementById('manual-form').style.display='block';
+    document.getElementById('btn-add-confirm').style.display='inline-block';
+  }catch(e){status.textContent='❌ Erro ao buscar. Tente novamente.';status.style.color='#E74C3C';}
+}
+
+function showManualForm(name,lat,lng,address){
+  document.getElementById('add-name').value=name;
+  document.getElementById('add-lat').value=lat;
+  document.getElementById('add-lng').value=lng;
+  if(address!==undefined)document.getElementById('add-address').value=address||'';
+  if(lat&&lng){document.getElementById('geocode-status').textContent='✅ Localização encontrada';document.getElementById('geocode-status').style.color='#16a085';}
+  document.getElementById('manual-form').style.display='block';
+  document.getElementById('btn-add-confirm').style.display='inline-block';
+}
+
+function confirmAddLocal(){
+  var name=document.getElementById('add-name').value.trim();
+  var lat=parseFloat(document.getElementById('add-lat').value);
+  var lng=parseFloat(document.getElementById('add-lng').value);
+  var desc=document.getElementById('add-desc').value.trim();
+  var note=document.getElementById('add-note').value.trim();
+  var cat=selectedCat;
+  var err=document.getElementById('add-err');
+  if(!name){err.textContent='Informe o nome.';err.style.display='block';return;}
+  if(isNaN(lat)||isNaN(lng)){err.textContent='Endereço não encontrado. Clique em "Buscar endereço" primeiro.';err.style.display='block';return;}
+  err.style.display='none';
+  if(cat==='hotel'){
+    hotel={name:name,lat:lat,lng:lng,desc:desc,note:note};
+    updateHotelBanner();
+    if(addTarget==='res')document.getElementById('recalc-toast').style.display='flex';
+    closeAddModal();return;
+  }
+  var pt={name:name,lat:lat,lng:lng,desc:desc,note:note,cat:cat,manual:true};
+  if(addTarget==='pre'){manualPts.push(pt);renderManualList();}
+  else{
+    var stop=makeStop(pt,0);
+    itin[0].stops.push(stop);smartSortDay(0);recalcTravel(0);renderTL();renderMap();
+  }
+  closeAddModal();
+}
+
+function updateHotelBanner(){
+  var banner=document.getElementById('hotel-banner'),info=document.getElementById('hotel-info');
+  if(hotel){
+    banner.classList.add('has-hotel');
+    info.innerHTML='<b>'+hotel.name+'</b> <a href="'+mapsLink(hotel.lat,hotel.lng)+'" target="_blank" style="font-size:11px;color:#16a085;">ver no mapa</a>';
+    document.getElementById('btn-add-hotel').textContent='✏️ Alterar';
+  }else{
+    banner.classList.remove('has-hotel');info.textContent='Nenhuma hospedagem cadastrada ainda.';
+    document.getElementById('btn-add-hotel').textContent='+ Hospedagem';
+  }
+}
+
+function renderManualList(){
+  var c=document.getElementById('manual-items'),w=document.getElementById('manual-list');
+  if(!manualPts.length){w.style.display='none';return;}
+  w.style.display='block';
+  c.innerHTML=manualPts.map(function(p,i){
+    var cfg=CAT_CONFIG[p.cat]||CAT_CONFIG.outro;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:#fdf9f3;border:1px solid #eee;border-radius:8px;padding:8px 12px;">'
+      +'<span style="font-size:13px;font-weight:500;">'+cfg.emoji+' '+p.name+'</span>'
+      +'<button data-i="'+i+'" class="rm-manual ghost" style="font-size:11px;padding:3px 8px;color:#E74C3C;border-color:#E8B4B8;">✕</button>'
+      +'</div>';
+  }).join('');
+  document.querySelectorAll('.rm-manual').forEach(function(b){b.addEventListener('click',function(){manualPts.splice(parseInt(this.getAttribute('data-i')),1);renderManualList();});});
+}
+
+/* ---- GEO ---- */
+function hav(la1,ln1,la2,ln2){
+  var R=6371,dL=(la2-la1)*Math.PI/180,dN=(ln2-ln1)*Math.PI/180;
+  var a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dN/2)*Math.sin(dN/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function kmeans(pts,k){
+  if(pts.length<=k)return pts.map(function(p){return[p];});
+  var cs=[Object.assign({},pts[Math.floor(Math.random()*pts.length)])];
+  while(cs.length<k){
+    var ds=pts.map(function(p){return Math.min.apply(null,cs.map(function(c){return hav(p.lat,p.lng,c.lat,c.lng);}));});
+    var tot=ds.reduce(function(a,b){return a+b;},0),r=Math.random()*tot,ch=0;
+    for(var i=0;i<ds.length;i++){r-=ds[i];if(r<=0){ch=i;break;}}
+    cs.push(Object.assign({},pts[ch]));
+  }
+  var cl;for(var it=0;it<60;it++){
+    cl=[];for(var x=0;x<k;x++)cl.push([]);
+    pts.forEach(function(p){var md=Infinity,b=0;for(var i=0;i<k;i++){var d=hav(p.lat,p.lng,cs[i].lat,cs[i].lng);if(d<md){md=d;b=i;}}cl[b].push(p);});
+    for(var i=0;i<k;i++){if(!cl[i].length){var lg=0;for(var j=1;j<k;j++)if(cl[j].length>cl[lg].length)lg=j;if(cl[lg].length>1)cl[i].push(cl[lg].pop());}}
+    cs=cl.map(function(c){if(!c.length)return cs[0];return{lat:c.reduce(function(s,p){return s+p.lat;},0)/c.length,lng:c.reduce(function(s,p){return s+p.lng;},0)/c.length};});
+  }return cl;
+}
+function nearestNeighborHotel(pts){
+  if(!hotel||pts.length<=1)return nearestNeighbor(pts);
+  var vis={},rt=[],bestD=Infinity,bestI=0;
+  pts.forEach(function(p,i){var d=hav(hotel.lat,hotel.lng,p.lat,p.lng);if(d<bestD){bestD=d;bestI=i;}});
+  vis[bestI]=true;rt.push(pts[bestI]);
+  while(rt.length<pts.length){var last=rt[rt.length-1],md=Infinity,ni=-1;for(var i=0;i<pts.length;i++){if(!vis[i]){var d=hav(last.lat,last.lng,pts[i].lat,pts[i].lng);if(d<md){md=d;ni=i;}}}vis[ni]=true;rt.push(pts[ni]);}
+  return rt;
+}
+function nearestNeighbor(pts){
+  if(pts.length<=1)return pts;
+  var vis={},rt=[pts[0]];vis[0]=true;
+  while(rt.length<pts.length){var last=rt[rt.length-1],md=Infinity,ni=-1;for(var i=0;i<pts.length;i++){if(!vis[i]){var d=hav(last.lat,last.lng,pts[i].lat,pts[i].lng);if(d<md){md=d;ni=i;}}}vis[ni]=true;rt.push(pts[ni]);}
+  return rt;
+}
+async function getRoute(pts){
+  if(pts.length<2)return{legs:[],geo:null};
+  var coords=pts.map(function(p){return p.lng.toFixed(6)+','+p.lat.toFixed(6);}).join(';');
+  try{
+    var res=await fetch('https://router.project-osrm.org/route/v1/foot/'+coords+'?overview=full&steps=false&geometries=geojson');
+    var data=await res.json();
+    if(data.code!=='Ok')return{legs:[],geo:null};
+    return{legs:data.routes[0].legs.map(function(l){return l.distance;}),geo:data.routes[0].geometry};
+  }catch(e){return{legs:[],geo:null};}
+}
+function recalcTravel(di){
+  var day=itin[di];
+  for(var i=0;i<day.stops.length-1;i++){var a=day.stops[i],b=day.stops[i+1],km=hav(a.lat,a.lng,b.lat,b.lng);a.travelMin=Math.max(1,Math.round(km/4*60));a.distKm=km.toFixed(2);}
+  if(day.stops.length>0){var ls=day.stops[day.stops.length-1];ls.travelMin=0;ls.distKm='0.00';}
+}
+function catSortOrder(cat){var o={cafe:0,almoco:2,atracao:1,compras:3,jantar:4,templo:1,natureza:1,hotel:5,outro:1};return o[cat]!==undefined?o[cat]:1;}
+function smartSortDay(di){
+  var day=itin[di];
+  day.stops.sort(function(a,b){return catSortOrder(a.cat)-catSortOrder(b.cat);});
+}
+function catDuration(cat){var d={cafe:25,almoco:60,jantar:75,compras:90,atracao:90,templo:60,natureza:60,hotel:0,outro:60};return d[cat]||90;}
+function makeStop(s,legDist){
+  var dm=legDist||0;
+  return{name:s.name,lat:s.lat,lng:s.lng,duration:catDuration(s.cat),cat:s.cat||'atracao',
+    desc:s.desc||'',note:s.note||'',descLoading:!(s.desc),
+    travelMin:dm>0?Math.max(1,Math.round((dm/1000)/4*60)):0,distKm:dm>0?(dm/1000).toFixed(2):'0.00',manual:s.manual||false};
+}
+function buildItin(dayData){
+  itin=dayData.map(function(day,di){
+    var hasLegs=day.legs&&day.legs.length>0;
+    var stops=day.stops.map(function(s,i){return makeStop(s,hasLegs&&i<day.legs.length?day.legs[i]:0);});
+    return{routeColor:DEFAULT_ROUTE_COLORS[di%DEFAULT_ROUTE_COLORS.length],pinColor:DEFAULT_PIN_COLORS[di%DEFAULT_PIN_COLORS.length],startH:9,startM:0,endH:21,endM:0,date:'',stops:stops,geo:day.geo};
+  });
+  itin.forEach(function(day,di){smartSortDay(di);if(!dayData[di].legs||!dayData[di].legs.length)recalcTravel(di);});
+}
+function recalcWithHotel(){
+  itin.forEach(function(day,di){smartSortDay(di);recalcTravel(di);});
+  renderTL();renderMap();
+  document.getElementById('recalc-toast').style.display='none';
+}
+function stopTime(di,si){
+  var day=itin[di],cur=day.startH*60+day.startM;
+  for(var i=0;i<si;i++){cur+=day.stops[i].duration;if(i<day.stops.length-1)cur+=day.stops[i].travelMin||0;}
+  var endLimit=(day.endH||21)*60+(day.endM||0);
+  var s=cur, e=cur+day.stops[si].duration;
+  return{s:s, e:e, overLimit: e > endLimit};
+}
+
+/* ---- DRAG ---- */
+var dragSrc=null;
+function onDragStart(e,di,si){dragSrc={di:di,si:si};e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',di+'-'+si);setTimeout(function(){var c=document.querySelector('.stop-card[data-di="'+di+'"][data-si="'+si+'"]');if(c)c.classList.add('dragging');},0);}
+function onDragEnd(){document.querySelectorAll('.stop-card').forEach(function(c){c.classList.remove('dragging','drag-over');});dragSrc=null;}
+function onDragOver(e,di,si){e.preventDefault();document.querySelectorAll('.stop-card').forEach(function(c){c.classList.remove('drag-over');});var card=document.querySelector('.stop-card[data-di="'+di+'"][data-si="'+si+'"]');if(card&&!(dragSrc&&dragSrc.di===di&&dragSrc.si===si))card.classList.add('drag-over');}
+function onDrop(e,toDi,toSi){
+  e.preventDefault();if(!dragSrc)return;
+  var fD=dragSrc.di,fS=dragSrc.si;if(fD===toDi&&fS===toSi)return;
+  var stop=itin[fD].stops.splice(fS,1)[0];
+  if(fD===toDi){var ins=toSi>fS?toSi-1:toSi;itin[toDi].stops.splice(ins,0,stop);}
+  else{itin[toDi].stops.splice(toSi,0,stop);}
+  recalcTravel(fD);if(fD!==toDi)recalcTravel(toDi);renderTL();renderMap();
+}
+
+/* ---- COLOR PICKERS ---- */
+function renderDayColorPickers(){
+  var container=document.getElementById('day-color-pickers');if(!container)return;
+  container.innerHTML='';
+  itin.forEach(function(day,di){
+    var wrap=document.createElement('div');
+    wrap.className='clr-day-wrap';
+    wrap.innerHTML='<span>Dia '+(di+1)+'</span>'
+      +'<div class="clr-item">Rota<input type="color" value="'+day.routeColor+'" data-di="'+di+'" data-t="r" class="dclr" title="Cor da rota - Dia '+(di+1)+'"></div>'
+      +'<div class="clr-item">Pins<input type="color" value="'+day.pinColor+'" data-di="'+di+'" data-t="p" class="dclr" title="Cor dos pins - Dia '+(di+1)+'"></div>';
+    container.appendChild(wrap);
+  });
+  container.querySelectorAll('.dclr').forEach(function(el){
+    el.addEventListener('input',function(){
+      var di=parseInt(this.getAttribute('data-di'));
+      if(this.getAttribute('data-t')==='r')itin[di].routeColor=this.value;
+      else itin[di].pinColor=this.value;
+      renderMap();
+    });
+  });
+}
+
+/* ---- RENDER TL ---- */
+function renderTL(){
+  var c=document.getElementById('tlc');if(!c)return;
+  renderDayColorPickers();
+  // hide cat toast on re-render only if user hasn't acted on it yet
+  // (leave it visible — it was set just before renderTL was called)
+  var html='';
+  itin.forEach(function(day,di){
+    var tkm=0,tmin=0;
+    day.stops.forEach(function(s,si){tmin+=s.duration;if(si<day.stops.length-1){tmin+=s.travelMin||0;tkm+=parseFloat(s.distKm)||0;}});
+    var hh=Math.floor(tmin/60),mm=tmin%60;
+    var dur=(hh>0?hh+'h ':'')+mm+'min';
+    var col=day.pinColor||day.routeColor||'#E74C3C';
+    var tv=(day.startH<10?'0':'')+day.startH+':'+(day.startM<10?'0':'')+day.startM;
+    var dateLabel=day.date?fmtDate(day.date):'';
+    html+='<div class="day-block">';
+    html+='<div class="day-header">';
+    html+='<div style="width:13px;height:13px;border-radius:50%;background:'+col+';flex-shrink:0;box-shadow:0 0 0 3px rgba(231,76,60,.15);"></div>';
+    html+='<div style="flex:1;">';
+    html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    html+='<span style="font-weight:700;font-size:15px;">Dia '+(di+1)+'</span>';
+    html+='<input type="date" value="'+(day.date||'')+'" data-di="'+di+'" class="date-input" style="font-size:12px;padding:3px 8px;border:1px solid #E8B4B8;border-radius:6px;background:#fff;width:auto;">';
+    if(dateLabel)html+='<span style="font-size:12px;color:#545454;font-style:italic;">'+dateLabel+'</span>';
+    html+='</div>';
+    var dayEndMin=day.startH*60+day.startM+tmin;
+    var limitMin=(day.endH||21)*60+(day.endM||0);
+    var overDay=dayEndMin>limitMin;
+    html+='<div style="font-size:11px;color:'+(overDay?'#E74C3C':'#545454')+';margin-top:3px;">'+day.stops.length+' paradas &middot; '+tkm.toFixed(1)+' km &middot; ~'+dur+(overDay?' &middot; <b>⚠️ Passa das '+fmt(limitMin)+'</b>':'')+'</div>';
+    html+='</div>';
+    var evEnd=(day.endH<10?'0':'')+day.endH+':'+(day.endM<10?'0':'')+day.endM;
+    html+='<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">';
+    html+='<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:#545454;">In&iacute;cio</span>';
+    html+='<input type="time" value="'+tv+'" data-di="'+di+'" class="start-input" style="font-size:12px;padding:3px 8px;width:80px;border:1px solid #E8B4B8;border-radius:6px;background:#fff;"></div>';
+    html+='<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:#545454;">T&eacute;rmino</span>';
+    html+='<input type="time" value="'+evEnd+'" data-di="'+di+'" class="end-input" style="font-size:12px;padding:3px 8px;width:80px;border:1px solid #E8B4B8;border-radius:6px;background:#fff;" title="Hor&aacute;rio m&aacute;ximo do dia"></div>';
+    html+='</div></div>';
+    html+='<div class="day-stops">';
+    day.stops.forEach(function(stop,si){
+      var t=stopTime(di,si),isLast=si===day.stops.length-1;
+      var cfg=CAT_CONFIG[stop.cat]||CAT_CONFIG.outro;
+      html+='<div class="stop-card" draggable="true" data-di="'+di+'" data-si="'+si+'">';
+      html+='<div class="stop-inner">';
+      html+='<div class="drag-handle" title="Arraste para reordenar">⠿</div>';
+      html+='<div style="flex:1;"><div class="stop-content">';
+      var timeColor=t.overLimit?'#E74C3C':'#545454';
+      var timeWarn=t.overLimit?' title="⚠️ Passa do horário de término do dia!"':'';
+      html+='<div class="stop-name-row">';
+      html+='<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">';
+      html+='<a href="'+mapsLink(stop.lat,stop.lng)+'" target="_blank" class="stop-name">'+stop.name+'</a>';
+      html+='<span class="cat-badge" style="background:'+cfg.bg+';color:'+cfg.color+';">'+cfg.emoji+' '+cfg.label+'</span>';
+      if(t.overLimit)html+='<span style="font-size:10px;color:#E74C3C;font-weight:600;">⚠️ Passa do limite</span>';
+      html+='</div>';
+      html+='<div class="time-badge"'+timeWarn+'><div class="time-lbl" style="color:'+timeColor+';">'+fmt(t.s)+'</div><div class="time-lbl" style="color:'+timeColor+';font-weight:'+(t.overLimit?'700':'400')+';">'+fmt(t.e)+'</div></div>';
+      html+='</div>';
+      if(stop.descLoading){html+='<div id="d-'+di+'-'+si+'" class="stop-desc"><span class="shimmer"></span></div>';}
+      else{html+='<div id="d-'+di+'-'+si+'" class="stop-desc">'+(stop.desc||'<em style="color:#ccc;font-size:11px;">Sem descri&ccedil;&atilde;o.</em>')+'</div>';}
+      html+='<div class="stop-note-area"><div class="note-lbl">📝 Minhas observa&ccedil;&otilde;es</div>';
+      html+='<textarea class="note-input" data-di="'+di+'" data-si="'+si+'" placeholder="Horário de funcionamento, o que pedir, ingressos...">'+(stop.note||'')+'</textarea></div>';
+      html+='<div class="stop-ctrls">';
+      html+='<div class="dur-wrap"><input type="number" min="5" max="720" value="'+stop.duration+'" data-di="'+di+'" data-si="'+si+'" class="dur-input"><span>min</span></div>';
+      html+='<select data-di="'+di+'" data-si="'+si+'" class="cat-select" title="Alterar categoria">';
+      Object.keys(CAT_CONFIG).forEach(function(k){if(k==='hotel')return;var cfg2=CAT_CONFIG[k];html+='<option value="'+k+'"'+(stop.cat===k?' selected':'')+'>'+cfg2.emoji+' '+cfg2.label+'</option>';});
+      html+='</select>';
+      if(itin.length>1){html+='<select data-di="'+di+'" data-si="'+si+'" class="mv-select"><option value="">Mover para...</option>';itin.forEach(function(_,dj){if(dj!==di)html+='<option value="'+dj+'">Dia '+(dj+1)+'</option>';});html+='</select>';}
+      html+='<button class="ghost rm-btn" data-di="'+di+'" data-si="'+si+'" style="font-size:11px;padding:3px 10px;color:#E74C3C;border-color:#E8B4B8;">✕</button>';
+      html+='</div></div></div></div></div>';
+      if(!isLast&&stop.travelMin>0){html+='<div class="travel-row"><span style="color:'+col+';font-size:14px;">↓</span> '+stop.travelMin+' min a p&eacute; &middot; '+stop.distKm+' km</div>';}
+    });
+    html+='</div></div>';
+  });
+  c.innerHTML=html;
+  bindTLEvents();
+}
+
+function bindTLEvents(){
+  document.querySelectorAll('.stop-card').forEach(function(card){
+    var di=parseInt(card.getAttribute('data-di')),si=parseInt(card.getAttribute('data-si'));
+    card.addEventListener('dragstart',function(e){onDragStart(e,di,si);});
+    card.addEventListener('dragend',onDragEnd);
+    card.addEventListener('dragover',function(e){onDragOver(e,di,si);});
+    card.addEventListener('drop',function(e){onDrop(e,di,si);});
+  });
+  document.querySelectorAll('.date-input').forEach(function(el){el.addEventListener('change',function(){itin[parseInt(this.getAttribute('data-di'))].date=this.value;renderTL();});});
+  document.querySelectorAll('.start-input').forEach(function(el){el.addEventListener('change',function(){var di=parseInt(this.getAttribute('data-di')),p=this.value.split(':');itin[di].startH=parseInt(p[0])||9;itin[di].startM=parseInt(p[1])||0;renderTL();});});
+  document.querySelectorAll('.end-input').forEach(function(el){el.addEventListener('change',function(){var di=parseInt(this.getAttribute('data-di')),p=this.value.split(':');itin[di].endH=parseInt(p[0])||21;itin[di].endM=parseInt(p[1])||0;renderTL();});});
+  document.querySelectorAll('.dur-input').forEach(function(el){el.addEventListener('change',function(){var di=parseInt(this.getAttribute('data-di')),si=parseInt(this.getAttribute('data-si'));itin[di].stops[si].duration=Math.max(5,parseInt(this.value)||60);renderTL();});});
+  document.querySelectorAll('.cat-select').forEach(function(el){el.addEventListener('change',function(){
+    var di=parseInt(this.getAttribute('data-di')),si=parseInt(this.getAttribute('data-si'));
+    itin[di].stops[si].cat=this.value;
+    renderTL();renderMap();
+    // only show toast if the new category has an ideal time
+    var cfg=CAT_CONFIG[this.value];
+    if(cfg&&cfg.idealH!==null){
+      window._catChangedDi=di;
+      var toast=document.getElementById('cat-toast');
+      toast.style.display='flex';
+      toast.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+  });});
+  document.querySelectorAll('.mv-select').forEach(function(el){el.addEventListener('change',function(){var fD=parseInt(this.getAttribute('data-di')),si=parseInt(this.getAttribute('data-si')),tD=this.value;if(tD==='')return;tD=parseInt(tD);var stop=itin[fD].stops.splice(si,1)[0];itin[tD].stops.push(stop);recalcTravel(fD);recalcTravel(tD);renderTL();renderMap();});});
+  document.querySelectorAll('.note-input').forEach(function(el){el.addEventListener('input',function(){itin[parseInt(this.getAttribute('data-di'))].stops[parseInt(this.getAttribute('data-si'))].note=this.value;});});
+  document.querySelectorAll('.rm-btn').forEach(function(el){el.addEventListener('click',function(){var di=parseInt(this.getAttribute('data-di')),si=parseInt(this.getAttribute('data-si'));itin[di].stops.splice(si,1);recalcTravel(di);renderTL();renderMap();});});
+}
+
+/* ---- MAP ---- */
+function goTab(which){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('on');});
+  if(which==='map'){
+    document.getElementById('tb-map').classList.add('on');
+    document.getElementById('v-tl').style.display='none';
+    document.getElementById('v-map').style.display='block';
+    if(!mapObj){
+      mapObj=L.map('map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(mapObj);
+    }
+    setTimeout(function(){mapObj.invalidateSize();renderMap();},150);
+  }else{
+    document.getElementById('tb-tl').classList.add('on');
+    document.getElementById('v-map').style.display='none';
+    document.getElementById('v-tl').style.display='block';
+    renderTL();
+  }
+}
+
+function renderMap(){
+  if(!mapObj)return;
+  mapObj.eachLayer(function(l){if(!(l instanceof L.TileLayer))mapObj.removeLayer(l);});
+  var all=[];
+  if(hotel){
+    all.push([hotel.lat,hotel.lng]);
+    var hIcon=L.divIcon({className:'',html:'<div style="background:#E74C3C;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);">🏨</div>',iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker([hotel.lat,hotel.lng],{icon:hIcon}).addTo(mapObj).bindPopup('<b>🏨 Hospedagem</b><br>'+hotel.name);
+  }
+  itin.forEach(function(day,di){
+    var routeCol=day.routeColor||'#E74C3C';
+    var pinCol=day.pinColor||'#E74C3C';
+    if(day.geo&&day.geo.coordinates&&day.geo.coordinates.length){L.polyline(day.geo.coordinates.map(function(c){return[c[1],c[0]];}),{color:routeCol,weight:3,opacity:.8}).addTo(mapObj);}
+    else if(day.stops.length>1){L.polyline(day.stops.map(function(s){return[s.lat,s.lng];}),{color:routeCol,weight:2,opacity:.5,dashArray:'5,4'}).addTo(mapObj);}
+    day.stops.forEach(function(s,i){
+      all.push([s.lat,s.lng]);
+      var cfg=CAT_CONFIG[s.cat]||CAT_CONFIG.outro;
+      var icon=L.divIcon({className:'',html:'<div style="background:'+pinCol+';color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.25);">'+cfg.emoji+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+      L.marker([s.lat,s.lng],{icon:icon}).addTo(mapObj).bindPopup('<b>Dia '+(di+1)+' · '+(i+1)+'</b><br><b>'+s.name+'</b><br><small>'+cfg.label+'</small>'+(s.note?'<br><em>'+s.note+'</em>':''));
+    });
+  });
+  if(all.length)mapObj.fitBounds(all,{padding:[32,32]});
+}
+
+/* ---- AI DESC ---- */
+async function fetchDesc(di,si){
+  var stop=itin[di]&&itin[di].stops[si];if(!stop||!stop.descLoading)return;
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:80,messages:[{role:'user',content:'Descreva em 1 frase curta o que é "'+stop.name+'" como ponto turístico. Apenas a descrição, sem aspas.'}]})});
+    var data=await res.json();
+    stop.desc=(data.content&&data.content[0])?data.content[0].text.trim():'';
+  }catch(e){stop.desc='';}
+  stop.descLoading=false;
+  var el=document.getElementById('d-'+di+'-'+si);
+  if(el)el.innerHTML=stop.desc||'<em style="color:#ccc;font-size:11px;">Sem descrição disponível.</em>';
+}
+
+/* ---- PDF ---- */
+function doPDF(){
+  if(typeof window.jspdf==='undefined'){alert('Aguarde o jsPDF carregar.');return;}
+  var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var y=20,mg=18,pw=210;
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(30,30,30);doc.text('Roteiro de Viagem',mg,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(231,76,60);doc.text('@entregatosemalas',mg,y);y+=5;
+  if(hotel){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text('Hospedagem: '+hotel.name,mg,y);y+=4;}
+  doc.setDrawColor(232,180,184);doc.setLineWidth(0.8);doc.line(mg,y,pw-mg,y);y+=10;
+  itin.forEach(function(day,di){
+    if(y>262){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,30,30);
+    var dayTitle='Dia '+(di+1);if(day.date){var dl=fmtDate(day.date);if(dl)dayTitle+=' — '+dl;}
+    doc.text(dayTitle,mg,y);y+=7;
+    var cur=day.startH*60+day.startM;
+    day.stops.forEach(function(stop,si){
+      if(y>272){doc.addPage();y=20;}
+      var cfg=CAT_CONFIG[stop.cat]||CAT_CONFIG.outro;
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(130,130,130);
+      doc.text(fmt(cur)+' \u2013 '+fmt(cur+stop.duration),mg+2,y);
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,30);
+      doc.textWithLink(stop.name,mg+28,y,{url:mapsLink(stop.lat,stop.lng)});
+      var tw=doc.getTextWidth(stop.name);doc.setDrawColor(232,180,184);doc.setLineWidth(0.3);doc.line(mg+28,y+0.5,mg+28+tw,y+0.5);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130,130,130);doc.text(cfg.emoji+' '+cfg.label,pw-mg-22,y);
+      y+=5;
+      if(stop.desc){if(y>272){doc.addPage();y=20;}doc.setFont('helvetica','italic');doc.setFontSize(8.5);doc.setTextColor(100,100,100);var dl2=doc.splitTextToSize(stop.desc,pw-mg*2-28);doc.text(dl2,mg+28,y);y+=dl2.length*4+1;}
+      if(stop.note){if(y>272){doc.addPage();y=20;}doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(160,80,80);var nl=doc.splitTextToSize('Obs: '+stop.note,pw-mg*2-28);doc.text(nl,mg+28,y);y+=nl.length*4+1;}
+      cur+=stop.duration;
+      if(si<day.stops.length-1&&stop.travelMin>0){if(y>272){doc.addPage();y=20;}doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(170,170,170);doc.text('+ '+stop.travelMin+' min a p\xe9 \xb7 '+stop.distKm+' km',mg+10,y);y+=5;cur+=stop.travelMin;}
+      y+=2;
+    });y+=6;
+  });
+  doc.save('roteiro-viagem.pdf');
+}
+
+/* ---- BALANCE CLUSTERS ---- */
+function balanceClusters(clusters, k) {
+  // Remove empty clusters
+  var cl = clusters.filter(function(c){ return c.length > 0; });
+  if(cl.length <= 1) return cl;
+
+  var n = cl.reduce(function(s,c){return s+c.length;}, 0);
+  var ideal = n / cl.length;
+  var maxPerDay = Math.ceil(ideal) + 1; // allow 1 extra to avoid infinite loops
+  var minPerDay = Math.max(1, Math.floor(ideal) - 1);
+
+  // iterative rebalancing: move excess stops from big days to small days
+  var changed = true;
+  var passes = 0;
+  while(changed && passes < 20) {
+    changed = false;
+    passes++;
+    for(var i = 0; i < cl.length; i++) {
+      if(cl[i].length <= maxPerDay) continue;
+      // this day is too full — find the day that is most lacking
+      // and is geographically closest to some stop in this day
+      for(var j = 0; j < cl.length; j++) {
+        if(i === j) continue;
+        if(cl[j].length >= Math.ceil(ideal)) continue;
+        // find the stop in cl[i] that is closest to the centroid of cl[j]
+        var cjLat = cl[j].reduce(function(s,p){return s+p.lat;},0)/cl[j].length;
+        var cjLng = cl[j].reduce(function(s,p){return s+p.lng;},0)/cl[j].length;
+        var bestIdx = 0, bestDist = Infinity;
+        for(var x = 0; x < cl[i].length; x++) {
+          var d = hav(cl[i][x].lat, cl[i][x].lng, cjLat, cjLng);
+          if(d < bestDist) { bestDist = d; bestIdx = x; }
+        }
+        // move it
+        cl[j].push(cl[i].splice(bestIdx, 1)[0]);
+        changed = true;
+        if(cl[i].length <= maxPerDay) break;
+      }
+    }
+  }
+  return cl;
+}
+
+/* ---- GENERATE ---- */
+async function doGen(){
+  var err=document.getElementById('ue');err.style.display='none';
+  var days=parseInt(document.getElementById('ndays').value);
+  if(!days||days<1||days>30){err.textContent='Número de dias inválido (1–30).';err.style.display='block';return;}
+  var allPts=[];
+  if(kmlFile){var txt=await kmlFile.text();allPts=parseKML(txt);}
+  allPts=allPts.concat(manualPts);
+  if(!allPts.length){err.textContent='Adicione ao menos um local (KML ou manualmente).';err.style.display='block';return;}
+  show('s-load');
+  document.getElementById('lsub').textContent=allPts.length+' pontos. Agrupando por dia...';await sleep(300);
+  var k=Math.min(days,allPts.length),cl=kmeans(allPts,k);
+  cl=balanceClusters(cl,k);
+  var opt=cl.map(function(g){return hotel?nearestNeighborHotel(g):nearestNeighbor(g);}).filter(function(d){return d.length>0;});
+  var dayData=[];
+  for(var i=0;i<opt.length;i++){
+    document.getElementById('lsub').textContent='Calculando rota real: dia '+(i+1)+' de '+opt.length+'...';
+    await sleep(100);var r=await getRoute(opt[i]);dayData.push({stops:opt[i],legs:r.legs,geo:r.geo});
+  }
+  buildItin(dayData);
+  show('s-res');
+  document.getElementById('uname2').textContent=user?user.name:'';
+  updateHotelBanner();
+  mapObj=null;
+  document.getElementById('v-map').style.display='none';
+  document.getElementById('v-tl').style.display='block';
+  document.getElementById('tb-tl').classList.add('on');document.getElementById('tb-map').classList.remove('on');
+  renderTL();
+  itin.forEach(function(day,di){day.stops.forEach(function(_,si){fetchDesc(di,si);});});
+}
+
+function doReset(){itin=[];manualPts=[];hotel=null;mapObj=null;show('s-up');}
+
+/* ---- BIND ---- */
+document.getElementById('btn-login').addEventListener('click',doLogin);
+document.getElementById('btn-logout').addEventListener('click',doLogout);
+document.getElementById('fi').addEventListener('change',onFile);
+document.getElementById('btn-gen').addEventListener('click',doGen);
+document.getElementById('tb-map').addEventListener('click',function(){goTab('map');});
+document.getElementById('tb-tl').addEventListener('click',function(){goTab('tl');});
+document.getElementById('btn-reset').addEventListener('click',doReset);
+document.getElementById('btn-pdf').addEventListener('click',doPDF);
+document.getElementById('btn-open-add').addEventListener('click',function(){openAddModal('pre',false);});
+document.getElementById('btn-add-res').addEventListener('click',function(){openAddModal('res',false);});
+document.getElementById('btn-add-hotel').addEventListener('click',function(){openAddModal('res',true);});
+document.getElementById('btn-add-cancel').addEventListener('click',closeAddModal);
+document.getElementById('btn-add-confirm').addEventListener('click',confirmAddLocal);
+document.getElementById('btn-geocode').addEventListener('click',geocodeAddress);
+document.getElementById('btn-recalc-yes').addEventListener('click',recalcWithHotel);
+document.getElementById('btn-recalc-no').addEventListener('click',function(){document.getElementById('recalc-toast').style.display='none';});
+document.getElementById('btn-cat-recalc-yes').addEventListener('click',function(){
+  var di=window._catChangedDi;
+  if(di!==undefined){smartSortDay(di);recalcTravel(di);renderTL();renderMap();}
+  document.getElementById('cat-toast').style.display='none';
+});
+document.getElementById('btn-cat-recalc-no').addEventListener('click',function(){
+  document.getElementById('cat-toast').style.display='none';
+});
+document.getElementById('modal-add').addEventListener('click',function(e){if(e.target===this)closeAddModal();});
+document.getElementById('instr-toggle').addEventListener('click',function(){var b=document.getElementById('instr-body'),a=document.getElementById('instr-arrow');var o=b.classList.toggle('open');a.textContent=o?'▴':'▾';});
+document.getElementById('add-address').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();geocodeAddress();}});
+document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('dz').addEventListener('dragover',function(e){e.preventDefault();this.classList.add('over');});
+document.getElementById('dz').addEventListener('dragleave',function(){this.classList.remove('over');});
+document.getElementById('dz').addEventListener('drop',function(e){
+  e.preventDefault();this.classList.remove('over');
+  var f=e.dataTransfer.files[0];
+  if(f&&f.name.toLowerCase().endsWith('.kml')){kmlFile=f;document.getElementById('fname').textContent='📄 '+f.name;document.getElementById('fname').style.display='block';}
+});
+</script>
+</body>
+</html>
