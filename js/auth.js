@@ -13,7 +13,14 @@ async function doLogin(){
     user={email:em,name:data[0].nome||em.split('@')[0]};
     document.getElementById('uname').textContent=user.name;
     document.getElementById('uname2').textContent=user.name;
-    goStep(1);show('s-wizard');
+    var _draft=null;
+    try{var _raw=localStorage.getItem('roteiro_rascunho_'+em.toLowerCase());if(_raw)_draft=JSON.parse(_raw);}catch(e){}
+    if(_draft&&_draft.itin&&_draft.itin.length){
+      _pendingDraft=_draft;
+      showDraftModal(_draft);
+    }else{
+      goStep(1);show('s-wizard');
+    }
   }catch(e){err.textContent='Erro ao verificar acesso. Tente novamente.';err.style.display='block';}
   btn.textContent='Entrar';btn.disabled=false;
 }

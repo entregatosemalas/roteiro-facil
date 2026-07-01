@@ -460,6 +460,56 @@ function updateHotelBanner(){
 }
 
 // ── SAVE / LOAD (arquivo JSON) ────────────────────────────
+// ── AUTO-SAVE / RASCUNHO ──────────────────────────────────
+var _pendingDraft=null;
+var _draftSaveTimer=null;
+function _scheduleDraftSave(){
+  clearTimeout(_draftSaveTimer);
+  _draftSaveTimer=setTimeout(function(){
+    if(!user||!itin||!itin.length)return;
+    try{
+      var d={itin:itin,airports:airports,cities:cities,hotel:hotel,
+        savedAt:new Date().toISOString(),userName:user.name,userEmail:user.email};
+      localStorage.setItem('roteiro_rascunho_'+user.email.toLowerCase(),JSON.stringify(d));
+    }catch(e){}
+  },2000);
+}
+
+function showDraftModal(draft){
+  var ts=draft.savedAt?new Date(draft.savedAt).toLocaleString('pt-BR'):'';
+  var days=draft.itin?draft.itin.length:0;
+  var msg=document.getElementById('draft-msg');
+  if(msg)msg.textContent='Você tem um roteiro de '+days+' dia'+(days===1?'':'s')+' salvo'+(ts?' em '+ts:'')+'.';
+  var overlay=document.getElementById('draft-overlay');
+  if(overlay)overlay.style.display='flex';
+}
+
+function restoreDraft(){
+  var overlay=document.getElementById('draft-overlay');
+  if(overlay)overlay.style.display='none';
+  if(!_pendingDraft)return;
+  itin=_pendingDraft.itin||[];
+  airports=_pendingDraft.airports||{arrival:null,departure:null};
+  cities=_pendingDraft.cities||[];
+  hotel=_pendingDraft.hotel||null;
+  _pendingDraft=null;
+  show('s-res');
+  document.getElementById('uname2').textContent=user?user.name:'';
+  if(mapObj){mapObj.remove();mapObj=null;}
+  document.getElementById('v-map').style.display='none';
+  document.getElementById('v-tl').style.display='block';
+  document.getElementById('tb-tl').classList.add('on');document.getElementById('tb-map').classList.remove('on');
+  renderTL();updateHotelBanner();updateDayCityNames();
+}
+
+function discardDraft(){
+  var overlay=document.getElementById('draft-overlay');
+  if(overlay)overlay.style.display='none';
+  if(user)try{localStorage.removeItem('roteiro_rascunho_'+user.email.toLowerCase());}catch(e){}
+  _pendingDraft=null;
+  goStep(1);show('s-wizard');
+}
+
 function saveRoteiro(){
   if(!user)return;
   var data={itin:itin,airports:airports,cities:cities,hotel:hotel,

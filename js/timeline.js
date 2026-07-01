@@ -199,6 +199,7 @@ function renderTL(){
   });
   c.innerHTML=html;
   bindTLEvents();
+  if(typeof _scheduleDraftSave==='function')_scheduleDraftSave();
 }
 function toggleDay(di){if(itin[di])itin[di].collapsed=!itin[di].collapsed;renderTL();}
 

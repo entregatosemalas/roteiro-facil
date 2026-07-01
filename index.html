@@ -328,6 +328,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="draft-overlay" style="display:none;">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:40px;margin-bottom:12px;">✈️</div>
+    <h3 style="margin-bottom:8px;">Rascunho salvo</h3>
+    <p id="draft-msg" style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.5;"></p>
+    <div style="display:flex;gap:10px;flex-direction:column;">
+      <button class="primary" onclick="restoreDraft()" style="width:100%;">🔄 Continuar de onde parei</button>
+      <button class="ghost" onclick="discardDraft()" style="width:100%;">+ Começar novo roteiro</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/config.js"></script>
