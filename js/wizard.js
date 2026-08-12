@@ -85,20 +85,14 @@ function updateDaysCounter(){
 function renderCityChips(){
   var el=document.getElementById('city-chips');if(!el)return;
   el.innerHTML=PRESET_CITIES.map(function(pc,idx){
-    var found=null;
-    for(var x=0;x<cities.length;x++){if(normName(cities[x].name)===normName(pc.name)){found=cities[x];break;}}
-    var sel=!!found;
-    var days=found?found.days:pc.sugDays;
+    var count=cities.filter(function(c){return normName(c.name)===normName(pc.name);}).length;
+    var sel=count>0;
     return '<div class="city-chip'+(sel?' sel':'')+'" data-chip-idx="'+idx+'">'
       +'<div class="chip-top"><span class="chip-emoji">'+pc.emoji+'</span>'
       +'<span class="chip-name">'+pc.name+'</span></div>'
       +(sel
-        ?'<div class="chip-days-ctrl" onclick="event.stopPropagation();">'
-          +'<button class="chip-btn" onclick="adjustChipDays('+idx+',-1);event.stopPropagation();">−</button>'
-          +'<span class="chip-days-num">'+days+'d</span>'
-          +'<button class="chip-btn" onclick="adjustChipDays('+idx+',1);event.stopPropagation();">+</button>'
-          +'</div>'
-        :'<div class="chip-days-hint">'+pc.sugDays+'d</div>')
+        ?'<div class="chip-days-hint" style="color:#E74C3C;font-weight:700;">'+(count>1?'&#10003; '+count+'x adicionado':'&#10003; adicionado')+'</div>'
+        :'<div class="chip-days-hint">'+pc.sugDays+'d &middot; sugest&atilde;o</div>')
       +'</div>';
   }).join('');
   el.querySelectorAll('.city-chip').forEach(function(chip){
@@ -112,24 +106,8 @@ function renderCityChips(){
 
 function togglePresetCity(idx){
   var pc=PRESET_CITIES[idx];
-  var norm=normName(pc.name);
-  var ei=-1;
-  for(var i=0;i<cities.length;i++){if(normName(cities[i].name)===norm){ei=i;break;}}
-  if(ei>=0){cities.splice(ei,1);}
-  else{cities.push({name:pc.name,lat:pc.lat,lng:pc.lng,days:pc.sugDays,hotel:null,hotelConfirmed:false});}
+  cities.push({name:pc.name,lat:pc.lat,lng:pc.lng,days:pc.sugDays,hotel:null,hotelConfirmed:false});
   renderCityChips();
-}
-
-function adjustChipDays(idx,delta){
-  var pc=PRESET_CITIES[idx];
-  var norm=normName(pc.name);
-  for(var i=0;i<cities.length;i++){
-    if(normName(cities[i].name)===norm){
-      cities[i].days=Math.max(1,Math.min(21,cities[i].days+delta));
-      renderCityChips();
-      return;
-    }
-  }
 }
 
 // ── AIRPORT SEARCH ───────────────────────────────────────
@@ -149,17 +127,19 @@ function setupAirportSearch(inputId,resultsId,which){
 
 async function nominatimSearch(q,resultsId,onSelect){
   try{
-    var res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=5&accept-language=pt-BR,pt;q=0.9',
-      {headers:{'Accept-Language':'pt-BR,pt;q=0.9'}});
+    var res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=5&namedetails=1&accept-language=pt-BR,pt;q=0.9,en;q=0.5',
+      {headers:{'Accept-Language':'pt-BR,pt;q=0.9,en;q=0.5'}});
     var data=await res.json();
     var box=document.getElementById(resultsId);if(!box)return;
     if(!data.length){box.style.display='none';return;}
     box.innerHTML='';
     data.forEach(function(r){
+      var nd=r.namedetails||{};
+      var bestName=(nd['name:pt']||nd['name:en']||r.display_name.split(',')[0]).trim();
       var div=document.createElement('div');div.className='sr-item';
-      div.innerHTML='<div class="sr-name">'+r.display_name.split(',')[0]+'</div><div class="sr-addr">'+r.display_name+'</div>';
+      div.innerHTML='<div class="sr-name">'+bestName+'</div><div class="sr-addr">'+r.display_name+'</div>';
       div.addEventListener('click',function(){
-        onSelect({name:r.display_name.split(',')[0].trim(),lat:parseFloat(r.lat),lng:parseFloat(r.lon),fullName:r.display_name});
+        onSelect({name:bestName,lat:parseFloat(r.lat),lng:parseFloat(r.lon),fullName:r.display_name});
         box.style.display='none';box.innerHTML='';
       });
       box.appendChild(div);
@@ -205,43 +185,45 @@ function setupCitySearch(){
 function doAddCity(data){
   var warn=document.getElementById('dup-warning');
   var norm=normName(data.name);
-  var dup=false;
-  for(var i=0;i<cities.length;i++){if(normName(cities[i].name)===norm){dup=true;break;}}
-  if(dup){
-    if(warn){warn.style.display='block';warn.textContent='⚠️ "'+data.name+'" já está na lista.';}
-    return;
-  }
-  if(warn)warn.style.display='none';
+  var isRevisit=cities.some(function(c){return normName(c.name)===norm;});
   cities.push({name:data.name,lat:data.lat,lng:data.lng,days:2,hotel:null,hotelConfirmed:false});
+  if(warn){
+    if(isRevisit){warn.style.display='block';warn.textContent='📍 '+data.name+' já está no seu roteiro — isso será tratado como uma nova visita (bate-e-volta). Reordene a lista abaixo se precisar.';}
+    else warn.style.display='none';
+  }
   renderCityChips();
 }
 
-function removeCity(i){cities.splice(i,1);renderCityChips();}
-
-// Mostra apenas cidades customizadas (não-preset) no campo de busca
 function renderCities(){
   var c=document.getElementById('city-list');if(!c)return;
-  var custom=[];
-  for(var i=0;i<cities.length;i++){
-    var isPreset=false;
-    for(var j=0;j<PRESET_CITIES.length;j++){if(normName(PRESET_CITIES[j].name)===normName(cities[i].name)){isPreset=true;break;}}
-    if(!isPreset)custom.push({city:cities[i],idx:i});
-  }
-  if(!custom.length){c.innerHTML='';return;}
-  c.innerHTML=custom.map(function(entry){
-    var city=entry.city,i=entry.idx;
-    return '<div class="city-item-compact">'
-      +'<span style="font-weight:600;font-size:13px;">📍 '+city.name+'</span>'
-      +'<div style="display:flex;align-items:center;gap:6px;">'
-      +'<button class="chip-btn" onclick="var c=cities['+i+'];if(c)c.days=Math.max(1,c.days-1);renderCityChips();">−</button>'
-      +'<span style="min-width:28px;text-align:center;font-size:13px;font-weight:600;">'+city.days+'d</span>'
-      +'<button class="chip-btn" onclick="var c=cities['+i+'];if(c)c.days=Math.min(21,c.days+1);renderCityChips();">+</button>'
-      +'<button onclick="removeCity('+i+')" style="font-size:11px;padding:2px 8px;border:1px solid #E8B4B8;border-radius:6px;background:#fff;cursor:pointer;color:#E74C3C;">✕</button>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+  if(!cities.length){c.innerHTML='';return;}
+  c.innerHTML='<div class="lbl" style="margin-top:4px;">Seu roteiro de cidades (nesta ordem)</div>'
+    +cities.map(function(city,i){
+      return '<div class="city-item-compact">'
+        +'<span style="font-weight:600;font-size:13px;">'+(i+1)+'. 📍 '+city.name+'</span>'
+        +'<div style="display:flex;align-items:center;gap:6px;">'
+        +'<button class="chip-btn" onclick="var c=cities['+i+'];if(c)c.days=Math.max(1,c.days-1);renderCities();updateDaysCounter();">−</button>'
+        +'<span style="min-width:28px;text-align:center;font-size:13px;font-weight:600;">'+city.days+'d</span>'
+        +'<button class="chip-btn" onclick="var c=cities['+i+'];if(c)c.days=Math.min(21,c.days+1);renderCities();updateDaysCounter();">+</button>'
+        +'<button class="swap-btn" onclick="moveCity('+i+',-1)"'+(i===0?' disabled':'')+' title="Mover para cima">↑</button>'
+        +'<button class="swap-btn" onclick="moveCity('+i+',1)"'+(i===cities.length-1?' disabled':'')+' title="Mover para baixo">↓</button>'
+        +'<button class="chip-btn" onclick="repeatCity('+i+')" title="Adicionar uma revisita a esta cidade mais tarde">⟲+</button>'
+        +'<button onclick="removeCityAt('+i+')" style="font-size:11px;padding:2px 8px;border:1px solid #E8B4B8;border-radius:6px;background:#fff;cursor:pointer;color:#E74C3C;">×</button>'
+        +'</div></div>';
+    }).join('');
   updateDaysCounter();
 }
+function moveCity(i,dir){
+  var j=i+dir;if(j<0||j>=cities.length)return;
+  var tmp=cities[i];cities[i]=cities[j];cities[j]=tmp;
+  renderCityChips();
+}
+function repeatCity(i){
+  var src=cities[i];
+  cities.splice(i+1,0,{name:src.name,lat:src.lat,lng:src.lng,days:1,hotel:null,hotelConfirmed:false});
+  renderCityChips();
+}
+function removeCityAt(i){cities.splice(i,1);renderCityChips();}
 
 // ── TELA 4: CONFIRMAÇÃO ───────────────────────────────────
 function renderWiz4(){

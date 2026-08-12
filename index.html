@@ -118,6 +118,7 @@
       </div>
       <div id="dup-warning" class="dup-warning"></div>
       <div id="city-list"></div>
+      <div style="font-size:12px;color:#545454;padding:4px 2px 2px;">💡 Dica: coloque primeiro a cidade mais próxima do aeroporto de chegada, e por último a mais próxima do aeroporto de saída.</div>
       <div id="wiz-days-counter" style="display:none;background:#fff8f8;border:1px solid #E9B2B7;border-radius:10px;padding:10px 14px;font-size:13px;"></div>
       <button id="btn-wiz3-next" class="primary" style="width:100%;padding:13px;font-size:15px;">Continuar →</button>
       <button id="btn-wiz3-back" class="ghost" style="width:100%;padding:10px;">← Voltar</button>
@@ -170,6 +171,7 @@
       </div>
       <div class="tabs" style="border:none;">
         <button class="tab-btn on" id="tb-tl">Roteiro por dia</button>
+        <button class="tab-btn" id="tb-cal">📅 Calendário</button>
         <button class="tab-btn" id="tb-map">Mapa</button>
       </div>
     </div>
@@ -216,6 +218,11 @@
       <div id="day-color-pickers" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
     </div>
     <div id="tlc"></div>
+  </div>
+
+  <div id="v-cal" style="display:none;height:calc(100vh - 47px);overflow-y:auto;padding:18px 20px;max-width:900px;margin:0 auto;">
+    <div id="cal-header" style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;"></div>
+    <div id="cal-grid"></div>
   </div>
 
   <div id="v-map" style="display:none;height:calc(100vh - 47px);flex-direction:column;">
@@ -340,6 +347,28 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="day-info-overlay">
+  <div class="modal" style="max-width:480px;max-height:80vh;overflow-y:auto;">
+    <h3 id="day-info-title" style="margin-bottom:12px;"></h3>
+    <div id="day-info-body"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <button class="ghost" onclick="editDayInList()">✏️ Editar na lista</button>
+      <button class="ghost" onclick="closeDayInfoModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="stop-info-overlay">
+  <div class="modal" style="max-width:420px;">
+    <h3 id="stop-info-title" style="margin-bottom:8px;"></h3>
+    <div id="stop-info-body"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <button class="ghost" onclick="editStopInList()">✏️ Editar este passeio</button>
+      <button class="ghost" onclick="closeStopInfoModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/config.js"></script>
@@ -350,6 +379,7 @@
 <script src="js/timeline.js"></script>
 <script src="js/map.js"></script>
 <script src="js/result.js"></script>
+<script src="js/calendar.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/undo.js"></script>
 <script src="js/wiki.js"></script>

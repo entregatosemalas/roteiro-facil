@@ -1,6 +1,6 @@
 // ── CONFIG ──────────────────────────────────────────────
 var SUPABASE_URL='https://esqmcffhwoivxaxzmzlo.supabase.co';
-var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzcW1jZmZod29pdnhheHptemxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODg5NDEsImV4cCI6MjA5MzU2NDk0MX0.b3KT-ZpSGpHdPe1lyFqAj6XNaPQ9CjNuzvD5dCB8jcg';
+var SUPABASE_KEY='sb_publishable_kFyKK7Xu6W0qUVsdKuIJCQ_eF9jOe0x';
 var GKEY='AIzaSyDuGj669oGWH40MCfO_kOgl771dpcbntCY';
 // ────────────────────────────────────────────────────────
 
@@ -18,6 +18,7 @@ var _pendingHotelStop=null,_pendingHotelFromDi=-1;
 var undoStack=[];
 var _searchItinT=null;
 var _wikiObserver=null;
+var calViewDate=null;
 // ────────────────────────────────────────────────────────
 
 var CAT_CONFIG={

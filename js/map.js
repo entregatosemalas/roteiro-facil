@@ -1,14 +1,21 @@
 // ── MAP ───────────────────────────────────────────────────
 function goTab(which){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('v-tl').style.display='none';
+  document.getElementById('v-map').style.display='none';
+  document.getElementById('v-cal').style.display='none';
   if(which==='map'){
     document.getElementById('tb-map').classList.add('on');
-    document.getElementById('v-tl').style.display='none';document.getElementById('v-map').style.display='flex';
-    if(!mapObj){mapObj=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(mapObj);}
+    document.getElementById('v-map').style.display='flex';
+    if(!mapObj){mapObj=L.map('map');L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors · Wikimedia maps',maxZoom:19}).addTo(mapObj);}
     setTimeout(function(){mapObj.invalidateSize();renderMapFilter();renderMap();},100);
+  }else if(which==='cal'){
+    document.getElementById('tb-cal').classList.add('on');
+    document.getElementById('v-cal').style.display='block';
+    renderCalendar();
   }else{
     document.getElementById('tb-tl').classList.add('on');
-    document.getElementById('v-map').style.display='none';document.getElementById('v-tl').style.display='block';
+    document.getElementById('v-tl').style.display='block';
     renderTL();
   }
 }

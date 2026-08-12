@@ -133,14 +133,15 @@ function assignPointsToCities(allPts, citiesArr){
     groups[0]=(allPts||[]).slice();
     return {groups:groups, orphans:[]};
   }
-  // raio dinâmico = menor distância entre par de cidades / 2
+  // raio dinâmico = menor distância entre par de cidades / 2 (ignora pares quase idênticos)
   var minPair=Infinity;
   for(var a=0;a<citiesArr.length;a++){
     for(var b=a+1;b<citiesArr.length;b++){
       var d=hav(citiesArr[a].lat,citiesArr[a].lng,citiesArr[b].lat,citiesArr[b].lng);
-      if(d<minPair)minPair=d;
+      if(d>5&&d<minPair)minPair=d;
     }
   }
+  if(minPair===Infinity)minPair=100;
   var radius=minPair/2;
   (allPts||[]).forEach(function(pt){
     var bestCi=0,bestD=Infinity;
@@ -287,6 +288,29 @@ function twoOpt(stops){
   return arr;
 }
 
+function groupCitiesByName(citiesArr){
+  var order=[],map={};
+  citiesArr.forEach(function(city,ci){
+    var key=normName(city.name);
+    if(!map[key]){map[key]={city:city,occurrences:[]};order.push(key);}
+    map[key].occurrences.push({idx:ci,days:Math.max(1,city.days||1)});
+  });
+  return {order:order,map:map};
+}
+
+function sliceClustersByOccurrences(clusters,occurrences){
+  var totalDays=occurrences.reduce(function(s,o){return s+o.days;},0);
+  var totalClusters=clusters.length;
+  var result=[],cursor=0,acc=0;
+  occurrences.forEach(function(occ,oi){
+    acc+=occ.days;
+    var end=oi===occurrences.length-1?totalClusters:Math.round(totalClusters*acc/totalDays);
+    result.push(clusters.slice(cursor,end));
+    cursor=end;
+  });
+  return result;
+}
+
 function assignPtsToCity(pts){
   if(!cities.length)return pts.map(function(p){return{pt:p,ci:0};});
   return pts.map(function(pt){
@@ -316,31 +340,35 @@ async function doGen(){
   var globalDayIdx=0;
 
   if(hasCities){
-    // Funcionalidade 1+2: distribui pontos com raio dinâmico + acolhe órfãos no caminho
-    var assignedRes=assignPointsToCities(allPts,cities);
-    var orphRes=placeOrphans(assignedRes.orphans,cities,assignedRes.groups);
-    var cityGroups=assignedRes.groups.map(function(g,ci){
-      return g.concat(orphRes.groupsAddition[ci]||[]);
-    });
-    // ── Com cidades definidas: separa por cidade ──
-    cities.forEach(function(city,ci){
-      var cityPts=cityGroups[ci]||[];
-      var days=Math.max(1,city.days||1);
-      var k=Math.min(days,cityPts.length||1);
+    var grouped=groupCitiesByName(cities);
+    var uniqueCityRefs=grouped.order.map(function(k){return grouped.map[k].city;});
+    var assignedRes=assignPointsToCities(allPts,uniqueCityRefs);
+    var orphRes=placeOrphans(assignedRes.orphans,uniqueCityRefs,assignedRes.groups);
+    var cityGroupsByName=assignedRes.groups.map(function(g,gi){return g.concat(orphRes.groupsAddition[gi]||[]);});
+
+    var clustersPerOccurrence={};
+    grouped.order.forEach(function(key,gi){
+      var group=grouped.map[key];
+      var pts=cityGroupsByName[gi]||[];
+      var totalDays=group.occurrences.reduce(function(s,o){return s+o.days;},0);
+      var k=Math.min(totalDays,pts.length||1);
       var clusters;
-      if(!cityPts.length){clusters=[[]];}
-      else if(k<=1){clusters=[cityPts];}
+      if(!pts.length){clusters=[];for(var z=0;z<totalDays;z++)clusters.push([]);}
+      else if(k<=1){clusters=[pts];}
       else{
-        // Funcionalidade 3: k-means++ com hotel como referência
-        var hotelRef=city.hotelConfirmed&&city.hotel?{lat:city.hotel.lat,lng:city.hotel.lng}:null;
-        clusters=kmeanspp(cityPts,k,hotelRef);
+        var hotelRef=group.city.hotelConfirmed&&group.city.hotel?{lat:group.city.hotel.lat,lng:group.city.hotel.lng}:null;
+        clusters=kmeanspp(pts,k,hotelRef);
         clusters=balanceClusters(clusters,k);
-        // Garante que pontos a >60km não ficam no mesmo dia
         clusters=ensureGeoCoherence(clusters,60);
       }
-      clusters.forEach(function(cluster,di){
+      var sliced=sliceClustersByOccurrences(clusters,group.occurrences);
+      group.occurrences.forEach(function(occ,oi){clustersPerOccurrence[occ.idx]=sliced[oi]||[];});
+    });
+
+    cities.forEach(function(city,ci){
+      var occClusters=clustersPerOccurrence[ci]||[];
+      occClusters.forEach(function(cluster){
         var hotelPt=city.hotelConfirmed&&city.hotel?city.hotel:null;
-        // Funcionalidade 4: hotel → nearestNeighborH; sem hotel → northFirst
         var sorted=hotelPt?nearestNeighborH(cluster,hotelPt):northFirst(cluster);
         var stops=sorted.map(function(s){return makeStop(s,0);});
         if(hotelPt){
@@ -348,12 +376,11 @@ async function doGen(){
             duration:0,cat:'hotel',desc:'Hospedagem',note:'',descLoading:false,travelMin:0,distKm:'0.00',manual:false,isHotelMarker:true};
           stops.unshift(hMarker);
         }
-        // Funcionalidade 5: 2-opt refinement
         stops=twoOpt(stops);
         itin.push({routeColor:DEFAULT_ROUTE_COLORS[globalDayIdx%DEFAULT_ROUTE_COLORS.length],
           pinColor:DEFAULT_PIN_COLORS[globalDayIdx%DEFAULT_PIN_COLORS.length],
           startH:9,startM:0,endH:21,endM:0,date:'',stops:stops,geo:null,
-          cityName:city.name,isFirstCity:di===0,isLastCity:di===clusters.length-1,cityIdx:ci});
+          cityName:city.name,cityIdx:ci});
         globalDayIdx++;
       });
     });
@@ -405,39 +432,6 @@ async function doGen(){
         globalDayIdx++;
       });
     });
-  }
-
-  // Reordena: cidade mais próxima do aeroporto de saída vai para o fim do roteiro
-  if(airports.departure&&cities.length>1){
-    var depLat=airports.departure.lat,depLng=airports.departure.lng;
-    var bestCi=0,bestDist=Infinity;
-    cities.forEach(function(c,ci){var d=hav(c.lat,c.lng,depLat,depLng);if(d<bestDist){bestDist=d;bestCi=ci;}});
-    if(itin.length&&itin[itin.length-1].cityIdx!==bestCi){
-      var bestDays=itin.filter(function(d){return d.cityIdx===bestCi;});
-      var otherDays=itin.filter(function(d){return d.cityIdx!==bestCi;});
-      itin=otherDays.concat(bestDays);
-      itin.forEach(function(day,di){
-        day.routeColor=DEFAULT_ROUTE_COLORS[di%DEFAULT_ROUTE_COLORS.length];
-        day.pinColor=DEFAULT_PIN_COLORS[di%DEFAULT_PIN_COLORS.length];
-      });
-    }
-  }
-
-  // Reordena: cidade mais próxima do aeroporto de CHEGADA vai para o início do roteiro
-  // (roda APÓS o de saída para ter prioridade final)
-  if(airports.arrival&&cities.length>1){
-    var arrLat=airports.arrival.lat,arrLng=airports.arrival.lng;
-    var bestArrCi=0,bestArrDist=Infinity;
-    cities.forEach(function(c,ci){var d=hav(c.lat,c.lng,arrLat,arrLng);if(d<bestArrDist){bestArrDist=d;bestArrCi=ci;}});
-    if(itin.length&&itin[0].cityIdx!==bestArrCi){
-      var arrDays=itin.filter(function(d){return d.cityIdx===bestArrCi;});
-      var nonArrDays=itin.filter(function(d){return d.cityIdx!==bestArrCi;});
-      itin=arrDays.concat(nonArrDays);
-      itin.forEach(function(day,di){
-        day.routeColor=DEFAULT_ROUTE_COLORS[di%DEFAULT_ROUTE_COLORS.length];
-        day.pinColor=DEFAULT_PIN_COLORS[di%DEFAULT_PIN_COLORS.length];
-      });
-    }
   }
 
   // Funcionalidade 7: Aeroportos nos extremos com isEndpoint
