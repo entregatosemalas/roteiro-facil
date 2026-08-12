@@ -200,6 +200,8 @@ function renderTL(){
   c.innerHTML=html;
   bindTLEvents();
   if(typeof _scheduleDraftSave==='function')_scheduleDraftSave();
+  var vcal=document.getElementById('v-cal');
+  if(vcal&&vcal.style.display!=='none'&&typeof renderCalendar==='function')renderCalendar();
 }
 function toggleDay(di){if(itin[di])itin[di].collapsed=!itin[di].collapsed;renderTL();}
 

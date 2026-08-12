@@ -81,6 +81,46 @@ document.getElementById('wiz-dep-date').addEventListener('change',updateWiz1Days
 
 document.getElementById('tb-map').addEventListener('click',function(){goTab('map');});
 document.getElementById('tb-tl').addEventListener('click',function(){goTab('tl');});
+document.getElementById('tb-cal').addEventListener('click',function(){goTab('cal');});
+
+// ── CALENDÁRIO: delegação única (nunca perde listener em re-render) ──────────
+document.getElementById('v-cal').addEventListener('click',function(e){
+  var prevBtn=e.target.closest('[data-cal-action="prev"]');
+  if(prevBtn){changeCalMonth(-1);return;}
+  var nextBtn=e.target.closest('[data-cal-action="next"]');
+  if(nextBtn){changeCalMonth(1);return;}
+  var stopEl=e.target.closest('[data-cal-stop]');
+  if(stopEl){
+    openStopInfoModal(parseInt(stopEl.getAttribute('data-day-idx')),parseInt(stopEl.getAttribute('data-stop-idx')));
+    return;
+  }
+  var dayEl=e.target.closest('[data-cal-day]');
+  if(dayEl){openDayInfoModal(parseInt(dayEl.getAttribute('data-day-idx')));}
+});
+
+// ── MODAL DO DIA: paradas e edição de data ────────────────────────────────────
+document.getElementById('day-info-overlay').addEventListener('click',function(e){
+  var stopEl=e.target.closest('[data-cal-stop]');
+  if(stopEl){
+    openStopInfoModal(parseInt(stopEl.getAttribute('data-day-idx')),parseInt(stopEl.getAttribute('data-stop-idx')));
+  }
+});
+document.getElementById('day-info-overlay').addEventListener('change',function(e){
+  if(e.target&&e.target.id==='day-info-date'){
+    var di=parseInt(e.target.getAttribute('data-day-idx'));
+    var dayRef=itin[di];if(!dayRef)return;
+    var oldGroup=dayRef.hotelGroup;
+    dayRef.date=e.target.value;
+    dayRef.hotelGroup=null;
+    if(oldGroup)itin.forEach(function(day){if(day.hotelGroup===oldGroup)day.hotelGroup=null;});
+    sortItinByDate();
+    renderCalendar();
+    var newDi=itin.indexOf(dayRef);
+    closeDayInfoModal();
+    if(newDi>=0)openDayInfoModal(newDi);
+  }
+});
+
 document.getElementById('btn-reset').addEventListener('click',doReset);
 document.getElementById('btn-pdf').addEventListener('click',doPDF);
 document.getElementById('btn-load-cloud').addEventListener('click',loadRoteiro);

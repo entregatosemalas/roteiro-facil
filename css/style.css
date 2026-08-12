@@ -162,3 +162,8 @@ select:focus{border-color:#E8B4B8;}
 .stop-note-empty textarea:focus{color:#545454;outline:none;box-shadow:none;}
 /* Nota preenchida: aparece com fundo */
 .stop-note-area .note-lbl{font-size:10px;font-weight:600;color:#E74C3C;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+
+/* ── CALENDÁRIO ─────────────────────────────────────────── */
+.cal-cell{transition:background .15s;}
+.cal-cell:hover{background:#fff8f8!important;}
+.cal-cell.today{box-shadow:inset 0 0 0 2px #E74C3C;}

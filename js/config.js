@@ -18,6 +18,7 @@ var _pendingHotelStop=null,_pendingHotelFromDi=-1;
 var undoStack=[];
 var _searchItinT=null;
 var _wikiObserver=null;
+var calViewDate=null;
 // ────────────────────────────────────────────────────────
 
 var CAT_CONFIG={

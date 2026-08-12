@@ -7,12 +7,13 @@ async function updateDayCityNames(){
     var cLat=reg.reduce(function(s,p){return s+p.lat;},0)/reg.length;
     var cLng=reg.reduce(function(s,p){return s+p.lng;},0)/reg.length;
     try{
-      var url='https://nominatim.openstreetmap.org/reverse?lat='+cLat+'&lon='+cLng+'&format=json&zoom=10';
-      var resp=await fetch(url,{headers:{'Accept-Language':'pt-BR,pt;q=0.9'}});
+      var url='https://nominatim.openstreetmap.org/reverse?lat='+cLat+'&lon='+cLng+'&format=json&zoom=10&namedetails=1&accept-language=pt-BR,pt;q=0.9,en;q=0.5';
+      var resp=await fetch(url,{headers:{'Accept-Language':'pt-BR,pt;q=0.9,en;q=0.5'}});
       var data=await resp.json();
       if(data&&data.address){
         var a=data.address;
-        var nm=a.city||a.town||a.village||a.county||a.state||'';
+        var nd=data.namedetails||{};
+        var nm=nd['name:pt']||nd['name:en']||a.city||a.town||a.village||a.county||a.state||'';
         if(nm)day.cityName=nm;
       }
     }catch(e){}
